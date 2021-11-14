@@ -1,40 +1,82 @@
-# NetTCR-2.0 enables accurate prediction of TCR-peptide binding by using paired TCRα and β sequence data
-This repository contains the code and the data to train [NetTCR-2.0](https://www.nature.com/articles/s42003-021-02610-3) model. 
-## License 
-NetTCR-2.0 is developed by Morten Nielsen's group at the Technical University of Denmark (DTU).
-NetTCR-2.0 code and data can be used freely by academic groups for non-commercial purposes.
-If you plan to use NetTCR or any data provided with the script in any for-profit application, you are required to obtain a separate license (contact Morten Nielsen, morni@dtu.dk). 
+### 参考资料
 
-For scientific questions, please contact Morten Nielsen (mniel@dtu.dk).
-## Data
-This data folder contains the data files used to train NetTCR-2.0.
+[tensorflow处理不平衡数据集的官方教程](https://www.tensorflow.org/tutorials/structured_data/imbalanced_data)
 
-File description:
-- **train_beta_{90,92,94,99}**: CDR3b only *training* dataset, partitioned using {90,92,94,99}% partitioning threshold;
 
-- **mira_eval_threshold{90,92,94,99}.csv**: MIRA dataset, used for the *evaluation* of the CDR3b models. The threshold refers to the separation from the training set; 
 
-- **train_alphabeta_{90,95}.csv**: Paired alpha beta dataset. The partitioning is done using {90,95}% partitioning threshold and using the average similarity between alpha and beta chain;
+### 工作流
 
-- **train_ab_{90,95}_{alpha,beta,aphabeta}.csv**: Paired alpha beta dataset. The partitioning is based on the {alpha,beta, alphabeta} chain(s) and is done using {90,95}% partitioning threshold;
+#### 预处理
 
-- **ext_eval_paired_data.csv**: Paired TCRs sequences of *external evaluation* of the alpha+beta model.
+* 分成三类
 
-## Train networks
+* 打乱顺序
 
-You can train the NetTCR_ab models running
+* 对氨基酸序列进行编码、填充
 
-`python nettcr.py --trainfile test/sample_train.csv --testfile test/sample_test.csv`
+  nettcr用的是blosum50_20a，可以尝试其他的
 
-This will print the predictions on the standard output or on a file (that can be specified with the option --outfile).
+* 改进数据集不平衡的问题
 
-Both training and test set should be a comma-separated CSV files. The files should have the following columns (with headers): CDR3a, CDR3b, peptide, binder (the binder coulmn is not required in the test file). 
-See test/sample_train.csv and test/sample_test.csv as an example.
+  * 过采样、欠采样
+  * SMOTE采样
 
-## NetTCR server
-NetTCR-2.0 is also availavble as a web server at https://services.healthtech.dtu.dk/service.php?NetTCR-2.0.
-The server offers the possibility to evaluate pre-trained models on new data. See Instructions tab for more information.
+**输出**：
 
-## Citation
-Montemurro, A., Schuster, V., Povlsen, H.R. et al. NetTCR-2.0 enables accurate prediction of TCR-peptide binding by using paired TCRα and β sequence data. Commun Biol 4, 1060 (2021). https://doi.org/10.1038/s42003-021-02610-3
+* \~_pep.npy :(len,9,20)
+* \~_a.npy:(len,30,20)
+* \~_b.npy:(len,30,20)
+* ~binder.npy(len,1)
+
+总共8个numpy数组（测试、训练集各四个）,~表示train或test，len表示长度。数组以文件的方式存在硬盘上
+
+
+
+#### 模型训练
+
+**输入：train_set.npk、test_set.npk**
+
+* 划分验证集和训练集
+
+* 训练模型
+* 调参
+
+**输出**：
+
+* 模型在测试集上的表现。输出文件以使用的超参来命名，格式如下
+
+  **lr<learnrate>bs<batchsize>ep<epoch>.csv**	
+
+  例如，使用学习率为0.001，batch_size为128，ep为128，则输出文件的名称为
+
+  lr0001bs128ep128.csv
+
+* 模型训练过程
+
+  **lr<learnrate>bs<batchsize>ep<epoch>.lop**
+
+  其中包含log和在验证集上的AUC，需要根据这个表现来进行调参
+
+
+
+#### 模型评估
+
+**输入**
+
+* lr<learnrate>bs<batchsize>ep<epoch>.csv
+
+* lr<learnrate>bs<batchsize>ep<epoch>.lop
+
+**输出**
+
+* AUC、ROC曲线、P、R、PR曲线等
+* 损失函数变化曲线、**验证集**AUC变化曲线
+
+根据模型评估调整参数，反复进行模型训练以及模型评估
+
+
+
+
+
+
 
