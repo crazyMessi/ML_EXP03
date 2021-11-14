@@ -2,6 +2,14 @@
 
 [tensorflow处理不平衡数据集的官方教程](https://www.tensorflow.org/tutorials/structured_data/imbalanced_data)
 
+### 使用说明
+
+* 配置好tensorflow的环境之后，在根目录下输入命令
+
+  `python nettcr.py -tr data/model_input/train_set.csv -te data/model_input/gig_test.csv`
+
+  即可运行代码。不想打印在控制台上可以重定向到文件里，详见python教程。
+
 
 
 ### 工作流
@@ -76,7 +84,7 @@
 
 
 
-
+### 
 
 
 
