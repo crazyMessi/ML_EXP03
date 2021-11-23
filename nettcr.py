@@ -3,13 +3,16 @@ import sys
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from tensorflow.keras.optimizers import Adam
 import utils
 from keras.callbacks import EarlyStopping
-
 from nettcr_architectures import nettcr_ab
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import keras.metrics
 
 # Options for Pandas DataFrame printing
 pd.set_option('display.max_rows', None)
@@ -38,17 +41,18 @@ LR = float(args.learn_rate)
 EPOCHS = int(args.epochs)
 BATCH_SIZE = int(args.batch_size)
 
-# ----------------------------载入数据----------------------------------------
+# ----------------------------批数据处理----------------------------------------
 print('Loading and encoding the data..')
 train_data = pd.read_csv(args.trainfile)
 test_data = pd.read_csv(args.testfile)
+# 划分训练集、验证集
+train_df, val_df = train_test_split(train_data, test_size=0.2)
 
 # Encode data
 encoding = utils.blosum50_20aa
 early_stop = EarlyStopping(monitor='loss', min_delta=0,
                            patience=10, verbose=0, mode='min', restore_best_weights=True)
 
-# Call and compile the model
 pep_train = utils.enc_list_bl_max_len(train_data.peptide, encoding, 9)
 tcra_train = utils.enc_list_bl_max_len(train_data.CDR3a, encoding, 30)
 tcrb_train = utils.enc_list_bl_max_len(train_data.CDR3b, encoding, 30)
@@ -60,16 +64,35 @@ tcrb_test = utils.enc_list_bl_max_len(test_data.CDR3b, encoding, 30)
 train_inputs = [tcra_train, tcrb_train, pep_train]
 test_inputs = [tcra_test, tcrb_test, pep_test]
 
+# ----------- 训练模型 ----------
 mdl = nettcr_ab()
 
-mdl.compile(loss="binary_crossentropy", optimizer=Adam(learning_rate=0.001))
+METRICS = [
+    keras.metrics.TruePositives(name='tp'),
+    keras.metrics.FalsePositives(name='fp'),
+    keras.metrics.TrueNegatives(name='tn'),
+    keras.metrics.FalseNegatives(name='fn'),
+    keras.metrics.BinaryAccuracy(name='accuracy'),
+    keras.metrics.Precision(name='precision'),
+    keras.metrics.Recall(name='recall'),
+    keras.metrics.AUC(name='auc'),
+    keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
+]
+
+mdl.compile(loss="binary_crossentropy", optimizer=Adam(learning_rate=0.001), metrics=METRICS)
 print('Training..')
-# Train
+
 history = mdl.fit(train_inputs, y_train,
-                  epochs=EPOCHS, batch_size=128, verbose=1, callbacks=[early_stop])
+                  epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1, callbacks=[early_stop])
+
+# 可以在这里设置EPOCHS、BATCH的衰减
+for i in range(EPOCHS):
+    history2 = mdl.fit(train_inputs, y_train,epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1, callbacks=[early_stop])
+
 
 print('Evaluating..')
-# Predict on test data
+
+# --------------- 在测试集上使用模型 ----------------
 preds = mdl.predict(test_inputs, verbose=0)
 pred_df = pd.concat([test_data, pd.Series(np.ravel(preds), name='prediction')], axis=1)
 
