@@ -15,6 +15,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import keras.metrics
+import random
 
 # Options for Pandas DataFrame printing
 pd.set_option('display.max_rows', None)
@@ -118,26 +119,31 @@ htr = []
 #     htr.append(history2)
 
 
-train_batches = []
-y_train_batches = []
-batch_his = []
-epoch_his = []
+# train_batches = []
+# y_train_batches = []
+# batch_his = []
+# epoch_his = []
 history = []
 
 # 区分正负样本
 pos_index = np.nonzero(y_train)[0]
 neg_index = np.nonzero(~y_train)[0]
-pl = len(pos_index)
-nl = len(neg_index)
-rate = pl/len(y_train)
+rd = []
+rate = len(pos_index)/len(y_train)
 # TODO 把数据分批 每次训练一批 并记录批次
 # 可以在这里设置EPOCHS、BATCH的衰减
 for i in range(EPOCHS):
-    for j in range(len(y_train)/BATCH_SIZE):
-        
-        history.append(mdl.fit(train_inputs, y_train, batch_size=BATCH_SIZE, verbose=1, callbacks=[early_stop]))
+    for j in range(int(len(y_train)/BATCH_SIZE)):
+        pos_index_batches = random.sample(pos_index.tolist(), int(BATCH_SIZE*rate))
+        neg_index_batches = random.sample(neg_index.tolist(), int(BATCH_SIZE - BATCH_SIZE*rate))
+        index_bathes = pos_index_batches + neg_index_batches
 
-plot_graphs(htr, 'auc')
+        train_batches = [train_inputs[0][np.array(index_bathes)], train_inputs[1][np.array(index_bathes)], train_inputs[2][np.array(index_bathes)]]
+        y_train_batches = y_train[np.array(index_bathes)]
+
+        history.append(mdl.fit(train_batches, y_train_batches, batch_size=BATCH_SIZE, verbose=1, callbacks=[early_stop]))
+
+plot_graphs(history, 'auc')
 
 
 # print('Evaluating..')
