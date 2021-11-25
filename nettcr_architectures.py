@@ -1,9 +1,10 @@
 import keras
 from keras.models import Model
-from keras.layers import Input, Dense, Conv1D
+from keras.layers import Input, Dense, Conv1D, Dropout
 from keras.layers import GlobalMaxPooling1D
 from keras.layers import concatenate
 
+kr = 0.001
 
 def nettcr_ab():
     '''NetTCR ab with the "correct" pooling dimension, that is: the three towers are convoluted, then pooled
@@ -45,7 +46,7 @@ def nettcr_ab():
     cdra_conv9 = Conv1D(16, 9, padding='same', activation='sigmoid', kernel_initializer='glorot_normal')(cdra_in)
     cdra_pool9 = GlobalMaxPooling1D()(cdra_conv9)
 
-    cdrb_conv1 = Conv1D(16, 1, padding='same', activation='sigmoid', kernel_initializer='glorot_normal')(cdrb_in)
+    cdrb_conv1 = Conv1D(16, 1, padding='same', activation='sigmoid', kernel_initializer='glorot_normal', kernel_regularizer = kr)(cdrb_in)
     cdrb_pool1 = GlobalMaxPooling1D()(cdrb_conv1)
     cdrb_conv3 = Conv1D(16, 3, padding='same', activation='sigmoid', kernel_initializer='glorot_normal')(cdrb_in)
     cdrb_pool3 = GlobalMaxPooling1D()(cdrb_conv3)
@@ -63,9 +64,6 @@ def nettcr_ab():
     cat = concatenate([pep_cat, cdra_cat, cdrb_cat], axis=1)
 
     dense = Dense(32, activation='sigmoid')(cat)
-
-    # 正则化
-    # drop = Dropout(0.3)(dense)
 
     out = Dense(1, activation='sigmoid')(dense)
 

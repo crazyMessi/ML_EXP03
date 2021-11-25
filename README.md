@@ -169,9 +169,13 @@ NetTCR指出大多数数据生成研究只关注CDR3-β链，但配对预测会�
   
     $\color{red}可以衰减;在lr后调整$
   
-  * loss function:binary cross-entropy
+  * loss function:binary_crossentropy交叉熵损失函数（适用于二分类）
   
   * $\color{red}drop函数（正则化）$
+  
+* 输出
+
+  * 
 
 
 
