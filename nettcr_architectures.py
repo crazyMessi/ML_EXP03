@@ -1,6 +1,6 @@
 import keras
 from keras.models import Model
-from keras.layers import Input, Dense, Conv1D
+from keras.layers import Input, Dense, Conv1D, Dropout
 from keras.layers import GlobalMaxPooling1D
 from keras.layers import concatenate
 
@@ -63,9 +63,6 @@ def nettcr_ab():
     cat = concatenate([pep_cat, cdra_cat, cdrb_cat], axis=1)
 
     dense = Dense(32, activation='sigmoid')(cat)
-
-    # 正则化
-    # drop = Dropout(0.3)(dense)
 
     out = Dense(1, activation='sigmoid')(dense)
 

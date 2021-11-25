@@ -35,21 +35,21 @@ parser.add_argument("-te", "--testfile", default="gig_test.csv", help="设定测
 parser.add_argument("-o", "--outfile", default=sys.stdout, help="设定输出文件夹")
 
 # 设置超参
-parser.add_argument("-e", "--epochs", default=100, type=int, help="设定训练时期数")
+parser.add_argument("-e", "--epochs", default=1, type=int, help="设定训练时期数")
 parser.add_argument("-lr", "--learn_rate", default=0.001, type=float, help="设定优化算法学习率")
 parser.add_argument("-bs", "--batch_size", default=128, type=int, help="批大小")
 
 args = parser.parse_args()
-LR = float(args.learn_rate)
+LEARN_RATE = float(args.learn_rate)
 EPOCHS = int(args.epochs)
 BATCH_SIZE = int(args.batch_size)
 
-# ----------------------------批数据处理----------------------------------------
+output_path = 'model_output/lr'+str(LEARN_RATE)+'BS'+str(BATCH_SIZE)+'EP'+str(EPOCHS)+'/'
+
+# ----------------------------数据处理----------------------------------------
 print('Loading and encoding the data..')
 train_data = pd.read_csv(args.trainfile)
 test_data = pd.read_csv(args.testfile)
-# 划分训练集、验证集
-train_df, val_df = train_test_split(train_data, test_size=0.2)
 
 # Encode data
 encoding = utils.blosum50_20aa
@@ -82,7 +82,7 @@ METRICS = [
     keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
 ]
 
-mdl.compile(loss="binary_crossentropy", optimizer=Adam(learning_rate=0.001), metrics=METRICS)
+mdl.compile(loss="binary_crossentropy", optimizer=Adam(learning_rate=LEARN_RATE), metrics=METRICS)
 print('Training..')
 
 # history = mdl.fit(train_inputs, y_train,
@@ -107,7 +107,7 @@ def plot_graphs(historysum, string):
 
 # plot_graphs(history, 'loss')
 
-htr = []
+# htr = []
 
 # # 可以在这里设置EPOCHS、BATCH的衰减
 # for i in range(EPOCHS):
@@ -119,10 +119,11 @@ htr = []
 #     htr.append(history2)
 
 
-# train_batches = []
-# y_train_batches = []
-# batch_his = []
-# epoch_his = []
+
+train_batches = []
+y_train_batches = []
+batch_his = []
+epoch_his = []
 history = []
 
 # 区分正负样本
@@ -130,6 +131,7 @@ pos_index = np.nonzero(y_train)[0]
 neg_index = np.nonzero(~y_train)[0]
 rd = []
 rate = len(pos_index)/len(y_train)
+
 # TODO 把数据分批 每次训练一批 并记录批次
 # 可以在这里设置EPOCHS、BATCH的衰减
 for i in range(EPOCHS):
@@ -142,9 +144,13 @@ for i in range(EPOCHS):
         y_train_batches = y_train[np.array(index_bathes)]
 
         history.append(mdl.fit(train_batches, y_train_batches, batch_size=BATCH_SIZE, verbose=1, callbacks=[early_stop]))
+    mdl.save(output_path + 'trained_+ep'+str(i)+'.tf2')
 
 plot_graphs(history, 'auc')
-
+his_s = []
+for his in history:
+    his_s.append(his.history)
+np.save(output_path+'his_s.npy', his_s, allow_pickle=True)
 
 # print('Evaluating..')
 #
