@@ -25,6 +25,7 @@ pd.set_option('display.width', None)
 # -------------------------------------------------- 输入参数 ------------------------------------------------------------
 parser = ArgumentParser(description="设定输入参数")
 parser.add_argument("-n", "--sp_name", default="", help="模型命名")
+parser.add_argument("-rm", "--read_model", default=-1, type=int, help="判断是否需要模型")
 # 设置输入输出文件位置
 parser.add_argument("-tr", "--train_file", default="data/model_input/raw_data/train_set.csv", help="设定训练集")
 parser.add_argument("-te", "--test_file", default="data/model_input/raw_data/gig_test.csv", help="设定测试集")
@@ -32,7 +33,6 @@ parser.add_argument("-te", "--test_file", default="data/model_input/raw_data/gig
 parser.add_argument("-e", "--epochs", default=1, type=int, help="设定训练时期数")
 parser.add_argument("-lr", "--learn_rate", default=0.001, type=float, help="设定优化算法学习率")
 parser.add_argument("-bs", "--batch_size", default=128, type=int, help="批大小")
-
 # 设置测试or训练
 parser.add_argument("-t", "--if_skip_train", default=-1, type=int, help="如果大于等于0，则读取第参数批的模型进行测试")
 
@@ -42,6 +42,7 @@ EPOCHS = int(args.epochs)
 BATCH_SIZE = int(args.batch_size)
 special_name = args.sp_name
 if_skip_train = args.if_skip_train
+read_model = args.read_model
 
 output_path = 'data/model_output/' + special_name + 'lr' + str(LEARN_RATE) + 'bs' + str(BATCH_SIZE) + 'ep' + str(
     EPOCHS) + '/'
@@ -94,6 +95,7 @@ train_inputs = [tcra_train, tcrb_train, pep_train]
 test_inputs = [tcra_test, tcrb_test, pep_test]
 
 mdl = []
+history = []
 # --------------------------------------------------- 训练模型 -----------------------------------------------------------
 METRICS = [
     keras.metrics.TruePositives(name='tp'),
@@ -114,7 +116,6 @@ if if_skip_train < 0:
     y_train_batches = []
     # 每个时期的训练状况
     epoch_his = []
-    history = []
 
     # 区分正负样本
     pos_index = np.nonzero(y_train)[0]
@@ -155,8 +156,13 @@ else:
     print("跳过训练，读取模型文件测试")
     for i in range(if_skip_train):
         model_name = train_model_path + "trained_ep" + str(i) + '.tf2'
+        if read_model > 0:
+            try:
+                mdl.append(keras.models.load_model(model_name))
+            except ImportError as e:
+                print(model_name + "不存在")
         try:
-            mdl.append(keras.models.load_model(model_name))
+            history.append(np.load(his_path+'ep'+str(i)+'his.npy',allow_pickle=True))
         except ImportError as e:
             print(model_name + "不存在")
 
