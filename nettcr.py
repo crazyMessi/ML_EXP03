@@ -162,7 +162,7 @@ else:
             except ImportError as e:
                 print(model_name + "不存在")
         try:
-            history.append(np.load(his_path+'ep'+str(i)+'his.npy',allow_pickle=True))
+            history.append(np.load(his_path+'ep'+str(i)+'his.npy', allow_pickle=True))
         except ImportError as e:
             print(model_name + "不存在")
 
