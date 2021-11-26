@@ -57,18 +57,12 @@ if not os.path.exists(his_path):
     os.mkdir(his_path)
 
 
-def plot_graphs(History, string):
-    his_item = []
-    val_his = []
-    for t in range(EPOCHS):
-        his_item.append(History[t].history[string])
-        val_his.append(History[t].history["val_" + string])
-
-    plt.plot(his_item, 'r')
-    plt.plot(val_his, 'b')
-    plt.xlabel("Epochs")
-    plt.ylabel(string)
-    plt.legend([string, 'val_' + string])
+def plot_graphs(list1, list2, listname):
+    plt.plot(list1, 'r')
+    plt.plot(list2, 'b')
+    plt.xlabel("Batches")
+    plt.ylabel(listname)
+    plt.legend([listname, 'val_' + listname])
     plt.show()
 
 
@@ -200,4 +194,20 @@ if mdl:
 
 # -------------------------------------------------- 分析测试表现 --------------------------------------------------------
 print(y_test)
+ep_auc = []
+ep_val_auc = []
+ep_test_auc = []
+ep_los = []
+ep_val_loss = []
+for epoch_his in history:
+    for batch_his in epoch_his:
+        ep_auc.append(batch_his["auc"])
+        ep_los.append(batch_his["loss"])
+        try:
+            ep_val_auc.append(batch_his["val_auc"])
+            ep_val_loss.append(batch_his["val_loss"])
+        except Exception as e:
+            i = 1
 
+plot_graphs(ep_auc, ep_val_auc, "auc")
+plot_graphs(ep_los, ep_val_loss, "loss")
