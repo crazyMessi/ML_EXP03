@@ -43,7 +43,7 @@ LEARN_RATE = float(args.learn_rate)
 EPOCHS = int(args.epochs)
 BATCH_SIZE = int(args.batch_size)
 
-output_path = 'model_output/lr'+str(LEARN_RATE)+'BS'+str(BATCH_SIZE)+'EP'+str(EPOCHS)+'/'
+output_path = 'data/model_output/lr'+str(LEARN_RATE)+'BS'+str(BATCH_SIZE)+'EP'+str(EPOCHS)+'/'
 
 # ----------------------------数据处理----------------------------------------
 print('Loading and encoding the data..')
@@ -138,13 +138,12 @@ rate = pl/len(y_train)
 for i in range(EPOCHS):
     for j in range(int(len(y_train)/BATCH_SIZE)):
         history.append(mdl.fit(train_inputs, y_train, batch_size=BATCH_SIZE, verbose=1, callbacks=[early_stop]))
-    mdl.save(output_path + 'trained_+ep'+str(i)+'.tf2')
+    mdl.save(output_path + 'model/trained_ep'+str(i)+'.tf2')
 
-plot_graphs(history, 'auc')
 his_s = []
 for his in history:
     his_s.append(his.history)
-np.save(output_path+'his_s.npy', his_s, allow_pickle=True)
+np.save(output_path+'history/his_s.npy', his_s, allow_pickle=True)
 
 
 
