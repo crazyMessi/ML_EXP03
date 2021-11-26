@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler
 import keras.metrics
 import random
 from argparse import ArgumentParser
+import math
 
 # Options for Pandas DataFrame printing
 pd.set_option('display.max_rows', None)
@@ -119,21 +120,31 @@ if if_skip_train < 0:
     # 区分正负样本
     pos_index = np.nonzero(y_train)[0]
     neg_index = np.nonzero(~y_train)[0]
-    rd = []
-    rate = len(pos_index) / len(y_train)
+    # 划分验证集
+    valid_rate = 0.2
+    valid_pos_index_index = np.random.randint(0, np.size(pos_index) - 1, int(BATCH_SIZE * valid_rate / 2))
+    valid_neg_index_index = np.random.randint(0, np.size(neg_index) - 1, int(BATCH_SIZE * valid_rate / 2))
+    valid_pos_index = pos_index[valid_pos_index_index]
+    valid_neg_index = neg_index[valid_neg_index_index]
+    valid_index_batches = valid_pos_index.tolist() + valid_neg_index.tolist()
+    valid_batches = [train_inputs[0][np.array(valid_index_batches)], train_inputs[1][np.array(valid_index_batches)],
+                     train_inputs[2][np.array(valid_index_batches)]]
+    pos_index = np.delete(pos_index, valid_pos_index_index)
+    neg_index = np.delete(neg_index, valid_neg_index_index)
 
     # 可以在这里设置EPOCHS、BATCH的衰减
     for i in range(EPOCHS):
         for j in range(int(len(y_train) / BATCH_SIZE)):
-            pos_index_batches = random.sample(pos_index.tolist(), int(BATCH_SIZE * rate))
-            neg_index_batches = random.sample(neg_index.tolist(), int(BATCH_SIZE - BATCH_SIZE * rate))
+            # 划分测试集
+            pos_index_batches = random.sample(pos_index.tolist(), int(0.5*BATCH_SIZE))
+            neg_index_batches = random.sample(neg_index.tolist(), BATCH_SIZE - int(0.5*BATCH_SIZE))
             index_bathes = pos_index_batches + neg_index_batches
             train_batches = [train_inputs[0][np.array(index_bathes)], train_inputs[1][np.array(index_bathes)],
                              train_inputs[2][np.array(index_bathes)]]
             y_train_batches = y_train[np.array(index_bathes)]
             # 训练一个批次，记录批次日志
             epoch_his.append(mdl.fit(train_batches, y_train_batches, batch_size=BATCH_SIZE, verbose=1,
-                                     callbacks=[early_stop]).history)
+                                     callbacks=[early_stop], validation_data=valid_batches).history)
         # 存储该时期模型
         mdl.save(train_model_path + 'trained_ep' + str(i) + '.tf2')
         # 存储该时期模型训练日志
@@ -183,3 +194,4 @@ if mdl:
 
 # -------------------------------------------------- 分析测试表现 --------------------------------------------------------
 print(y_test)
+
