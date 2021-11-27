@@ -83,3 +83,35 @@ blosum50_20aa = {
     'V': np.array((0, -3, -3, -4, -1, -3, -3, -4, -4, 4, 1, -3, 1, -1, -3, -2, 0, -3, -1, 5))
 }
 
+
+# TODO 划分训练集、验证集（目前龚之俏在做）
+def spilt_data(train_input, train_y, EPOCH, BATCH_SIZE, val_rate):
+    # 一个输入列表，每个epoch从中取值一次，得到一个batch_train_input
+    """
+    ep_train_input, ep_train_y, ep_val_data = spilt_data()
+    for i in EPOCH
+        ...
+        for j in BATCH_SIZE
+        ...
+        mdl.fit()
+
+    """
+    ep_train_input = []
+    ep_train_y = []
+    ep_val_data = []
+    return ep_train_input, ep_train_y, ep_val_data
+
+
+# TODO 过采样
+def over_sample(train_input, y_train):
+    train_input = []
+    y_train = []
+    return train_input, y_train
+
+
+# TODO 绘图
+def my_draw(history, y_pred, binder):
+    return
+
+
+

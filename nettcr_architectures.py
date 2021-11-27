@@ -22,7 +22,6 @@ def nettcr_ab():
     #     pep_cat = concatenate([pep_cat, pool])
 
 
-
     pep_conv1 = Conv1D(16, 1, padding='same', activation='sigmoid', kernel_initializer='glorot_normal')(pep_in)
     pep_pool1 = GlobalMaxPooling1D()(pep_conv1)
     pep_conv3 = Conv1D(16, 3, padding='same', activation='sigmoid', kernel_initializer='glorot_normal')(pep_in)

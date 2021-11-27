@@ -1,6 +1,8 @@
 import os
 import sys
 
+import tensorflow.python.data
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -91,6 +93,7 @@ test_inputs = [tcra_test, tcrb_test, pep_test]
 
 mdl = []
 history = []
+pred_y = []
 # --------------------------------------------------- 训练模型 -----------------------------------------------------------
 METRICS = [
     keras.metrics.TruePositives(name='tp'),
@@ -103,6 +106,16 @@ METRICS = [
     keras.metrics.AUC(name='auc'),
     keras.metrics.AUC(name='prc', curve='PR'),  # precision-recall curve
 ]
+
+
+def eval_mdl(test_mdl):
+    # --------------- 在测试集上使用模型 ----------------
+    pred = test_mdl.predict(test_inputs, verbose=0)
+    pred_df = pd.concat([test_data, pd.Series(np.ravel(pred), name='prediction')], axis=1)
+    return pred
+    # pred_df.to_csv(args.outfile, index=False)
+
+
 if if_skip_train < 0:
     mdl = nettcr_ab()
     mdl.compile(loss="binary_crossentropy", optimizer=Adam(learning_rate=LEARN_RATE), metrics=METRICS)
@@ -129,6 +142,7 @@ if if_skip_train < 0:
 
     # 可以在这里设置EPOCHS、BATCH的衰减
     for i in range(EPOCHS):
+
         for j in range(int(len(y_train) / BATCH_SIZE)):
             # 划分测试集
             pos_index_batches = random.sample(pos_index.tolist(), int(0.5*BATCH_SIZE))
@@ -140,6 +154,7 @@ if if_skip_train < 0:
             # 训练一个批次，记录批次日志
             epoch_his.append(mdl.fit(train_batches, y_train_batches, batch_size=BATCH_SIZE, verbose=1,
                                      callbacks=[early_stop], validation_data=valid_batches).history)
+
         # 存储该时期模型
         mdl.save(train_model_path + 'trained_ep' + str(i) + '.tf2')
         # 存储该时期模型训练日志
@@ -148,6 +163,11 @@ if if_skip_train < 0:
             np.save(f, epoch_his, allow_pickle=True)
         history.append(epoch_his)
         epoch_his = []
+        # 存储该时期测试表现
+        pred_y.append(eval_mdl(mdl))
+        ep_pred_path = his_path + 'ep' + str(i) + 'pred.npy'
+        with open(ep_pred_path, 'wb') as f:
+            np.save(f, pred_y, allow_pickle=True)
 
     his_path = his_path + 'final_his.npy'
     try:
@@ -155,7 +175,6 @@ if if_skip_train < 0:
             np.save(f, history, allow_pickle=True)
     except ImportError as e:
         print("错误")
-
 
 else:
     print("跳过训练，读取模型文件测试")
@@ -167,23 +186,15 @@ else:
             except ImportError as e:
                 print(model_name + "不存在")
         try:
-            history.append(np.load(his_path+'ep'+str(i)+'his.npy', allow_pickle=True))
+            history.append(np.load(his_path + 'ep' + str(i) + 'his.npy', allow_pickle=True))
+            pred_y.append(np.load(his_path + 'ep' + str(i) + 'pred.npy', allow_pickle=True))
         except ImportError as e:
             print(model_name + "不存在")
 
 
 # -------------------------------------------------- 测试模型 ------------------------------------------------------------
-def eval_mdl(test_mdl):
-    # --------------- 在测试集上使用模型 ----------------
-    pred = test_mdl.predict(test_inputs, verbose=0)
-    pred_df = pd.concat([test_data, pd.Series(np.ravel(pred), name='prediction')], axis=1)
-    return pred
-    # pred_df.to_csv(args.outfile, index=False)
-
-
 if mdl:
     print('Evaluating..')
-    pred_y = []
     if if_skip_train > 0:
         for i in range(if_skip_train):
             model_name = train_model_path + "trained_ep" + str(i) + '.tf2'
