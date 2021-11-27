@@ -11,6 +11,6 @@
 !*.mlx
 !*.m
 !*.csv
-!data/model_output/*
 !*.gitignore
+!data/*
 
