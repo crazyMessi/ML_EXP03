@@ -1,0 +1,17 @@
+# 白名单机制
+*
+*.pyc
+# 不忽略目录
+!*/
+# 不忽略py、log、npy、mlx、m、md、csv
+!*.py
+!*.md
+!*.log
+!*.npy
+!*.mlx
+!*.m
+!*.csv
+!*.gitignore
+!data/*
+
+
